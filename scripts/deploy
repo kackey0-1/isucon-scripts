@@ -1,0 +1,19 @@
+#!/bin/sh
+# referenced from https://github.com/tatsuru/isucon13/blob/main/scripts/deploy
+
+set -v
+
+now=$(date +%Y%m%d-%H%M%S)
+branch="feature/setup"
+
+update="cd /home/isucon/webapp && git remote update && git checkout $branch && git pull"
+update_mysqld_config="sudo cp /home/isucon/webapp/mysql/mysql.conf.d/mysqld.cnf /etc/mysql/mysql.conf.d/mysqld.cnf"
+update_nginx_config1="sudo cp /home/isucon/webapp/nginx/nginx.conf /etc/nginx/nginx.conf"
+update_nginx_config2="sudo cp /home/isucon/webapp/nginx/sites-available/isucon.conf /etc/nginx/sites-available/isucon.conf"
+restart="cd /home/isucon/private_isu/webapp/golang && /home/isucon/.local/go/bin/go build -o app && sudo systemctl restart isu-go"
+rotate_mysql="sudo mv -v /var/log/mysql/mysql-slow.log /var/log/mysql/mysql-slow.log.$now && mysqladmin -uisuconp -pisuconp flush-logs && sudo systemctl restart mysql"
+rotate_nginx="sudo mv -v /var/log/nginx/access.log /var/log/nginx/access.log.$now && sudo systemctl reload nginx"
+
+git push origin $branch
+# ssh -A isucon@54.95.112.73 "$update && $restart && $rotate_mysql && $rotate_nginx"
+ssh -A isucon@54.95.112.73 "$update && $update_mysqld_config && $update_nginx_config1 && $update_nginx_config2 && $restart && $rotate_mysql && $rotate_nginx"
