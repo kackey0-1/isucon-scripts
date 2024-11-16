@@ -1,10 +1,19 @@
 #!/bin/sh
 # referenced from https://github.com/tatsuru/isucon13/blob/main/scripts/deploy
-
+# 
+# Command Usage
+# ./scripts/deploy branch_name server_name
+# ./scripts/deploy v1.0.4 kackey0-1
+# 
 set -v
 
+# 引数でブランチ名を受け取る。デフォルトは 'master'
+branch=${1:-master}
+
+# 引数で対象サーバーを受け取る。複数サーバーを指定可能
+servers=${@:2}
+
 now=$(date +%Y%m%d-%H%M%S)
-branch="v1.0.3"
 
 update="cd /home/isucon/webapp && git remote update && git checkout $branch"
 update_mysqld_config="sudo cp /home/isucon/webapp/mysql/mysqld.cnf /etc/mysql/mysql.conf.d/mysqld.cnf"
@@ -14,13 +23,10 @@ restart="cd /home/isucon/webapp/go && /home/isucon/local/golang/bin/go build -o 
 rotate_mysql="sudo touch /var/log/mysql/mysql-slow.log && sudo mv -v /var/log/mysql/mysql-slow.log /var/log/mysql/mysql-slow.log.$now && mysqladmin -uisucon -pisucon flush-logs && sudo systemctl restart mysql"
 rotate_nginx="sudo mv -v /var/log/nginx/access.log /var/log/nginx/access.log.$now && sudo systemctl reload nginx"
 
-# git push origin $branch
-# ssh -A isucon@54.95.112.73 "$update && $restart && $rotate_mysql && $rotate_nginx"
-echo "deploying 1"
-ssh -A isucon@52.196.84.194 "$update && $update_mysqld_config && $update_nginx_config1 && $update_nginx_config2 && $restart && $rotate_mysql && $rotate_nginx"
+# サーバーに順次デプロイ
+for server in $servers; do
+  echo "Deploying to $server"
+  # ssh -A isucon@54.95.112.73 "$update && $restart && $rotate_mysql && $rotate_nginx"
+  ssh -A isucon@$server "$update && $update_mysqld_config && $update_nginx_config1 && $update_nginx_config2 && $restart && $rotate_mysql && $rotate_nginx"
+done
 
-echo "deploying 2"
-ssh -A isucon@13.113.22.197 "$update && $update_mysqld_config && $update_nginx_config1 && $update_nginx_config2 && $restart && $rotate_mysql && $rotate_nginx"
-
-echo "deploying 3"
-ssh -A isucon@13.112.104.191 "$update && $update_mysqld_config && $update_nginx_config1 && $update_nginx_config2 && $restart && $rotate_mysql && $rotate_nginx"
