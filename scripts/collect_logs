@@ -19,6 +19,8 @@ if [ -z "$server" ]; then
   exit 1
 fi
 
+touch ./logs/access.log
+touch ./logs/mysql-slow.log
 mv ./logs/access.log ./logs/access.$now.log
 mv ./logs/mysql-slow.log ./logs/mysql-slow.$now.log
 
