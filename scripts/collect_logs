@@ -1,19 +1,31 @@
 #!/bin/sh
-# referenced from https://github.com/tatsuru/isucon13/blob/main/scripts/deploy
-
+# collect nginx log and mysql slow query log
+# Command Usage
+# ./scripts/deploy branch_name server_name
+# ./scripts/deploy v1.0.4 kackey0-1
+# 
 now=$(date +%Y%m%d-%H%M%S)
 REMOTE_USER="isucon"
-REMOTE_HOST="54.95.112.73"
+REMOTE_HOST="52.196.84.194"
 ACCESS_LOG="/var/log/nginx/access.log"
 SLOW_QUERY_LOG="/var/log/mysql/mysql-slow.log"
+
+# 引数を取得
+server=$1
+
+# 引数がない場合のエラーメッセージ
+if [ -z "$server" ]; then
+  echo "Usage: $0 <server_host>"
+  exit 1
+fi
 
 mv ./logs/access.log ./logs/access.$now.log
 mv ./logs/mysql-slow.log ./logs/mysql-slow.$now.log
 
-ssh ${REMOTE_USER}@${REMOTE_HOST} "sudo cp ${SLOW_QUERY_LOG} /tmp/mysql-slow.log && sudo chmod 644 /tmp/mysql-slow.log"
-scp ${REMOTE_USER}@${REMOTE_HOST}:/tmp/mysql-slow.log ./logs/mysql-slow.log
-ssh ${REMOTE_USER}@${REMOTE_HOST} "sudo rm /tmp/mysql-slow.log"
+ssh ${REMOTE_USER}@${server} "sudo cp ${SLOW_QUERY_LOG} /tmp/mysql-slow.log && sudo chmod 644 /tmp/mysql-slow.log"
+scp ${REMOTE_USER}@${server}:/tmp/mysql-slow.log ./logs/mysql-slow.log
+ssh ${REMOTE_USER}@${server} "sudo rm /tmp/mysql-slow.log"
 
-ssh ${REMOTE_USER}@${REMOTE_HOST} "sudo cp ${ACCESS_LOG} /tmp/access.log && sudo chmod 644 /tmp/access.log"
-scp ${REMOTE_USER}@${REMOTE_HOST}:/tmp/access.log ./logs/access.log
-ssh ${REMOTE_USER}@${REMOTE_HOST} "sudo rm /tmp/access.log"
+ssh ${REMOTE_USER}@${server} "sudo cp ${ACCESS_LOG} /tmp/access.log && sudo chmod 644 /tmp/access.log"
+scp ${REMOTE_USER}@${server}:/tmp/access.log ./logs/access.log
+ssh ${REMOTE_USER}@${server} "sudo rm /tmp/access.log"

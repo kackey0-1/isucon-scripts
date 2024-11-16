@@ -1,19 +1,32 @@
 #!/bin/sh
 # referenced from https://github.com/tatsuru/isucon13/blob/main/scripts/deploy
-
+# 
+# Command Usage
+# ./scripts/deploy branch_name server_name
+# ./scripts/deploy v1.0.4 kackey0-1
+# 
 set -v
 
-now=$(date +%Y%m%d-%H%M%S)
-branch="feature/setup"
+# 引数でブランチ名を受け取る。デフォルトは 'master'
+branch=${1:-master}
 
-update="cd /home/isucon/webapp && git remote update && git checkout $branch && git pull"
-update_mysqld_config="sudo cp /home/isucon/webapp/mysql/mysql.conf.d/mysqld.cnf /etc/mysql/mysql.conf.d/mysqld.cnf"
+# 引数で対象サーバーを受け取る。複数サーバーを指定可能
+servers=${@:2}
+
+now=$(date +%Y%m%d-%H%M%S)
+
+update="cd /home/isucon/webapp && git remote update && git checkout $branch"
+update_mysqld_config="sudo cp /home/isucon/webapp/mysql/mysqld.cnf /etc/mysql/mysql.conf.d/mysqld.cnf"
 update_nginx_config1="sudo cp /home/isucon/webapp/nginx/nginx.conf /etc/nginx/nginx.conf"
-update_nginx_config2="sudo cp /home/isucon/webapp/nginx/sites-available/isucon.conf /etc/nginx/sites-available/isucon.conf"
-restart="cd /home/isucon/private_isu/webapp/golang && /home/isucon/.local/go/bin/go build -o app && sudo systemctl restart isu-go"
-rotate_mysql="sudo mv -v /var/log/mysql/mysql-slow.log /var/log/mysql/mysql-slow.log.$now && mysqladmin -uisuconp -pisuconp flush-logs && sudo systemctl restart mysql"
+update_nginx_config2="sudo cp /home/isucon/webapp/nginx/isupipe.conf /etc/nginx/sites-available/isupipe.conf"
+restart="cd /home/isucon/webapp/go && /home/isucon/local/golang/bin/go build -o isupipe && sudo systemctl restart isupipe-go.service"
+rotate_mysql="sudo touch /var/log/mysql/mysql-slow.log && sudo mv -v /var/log/mysql/mysql-slow.log /var/log/mysql/mysql-slow.log.$now && mysqladmin -uisucon -pisucon flush-logs && sudo systemctl restart mysql"
 rotate_nginx="sudo mv -v /var/log/nginx/access.log /var/log/nginx/access.log.$now && sudo systemctl reload nginx"
 
-git push origin $branch
-# ssh -A isucon@54.95.112.73 "$update && $restart && $rotate_mysql && $rotate_nginx"
-ssh -A isucon@54.95.112.73 "$update && $update_mysqld_config && $update_nginx_config1 && $update_nginx_config2 && $restart && $rotate_mysql && $rotate_nginx"
+# サーバーに順次デプロイ
+for server in $servers; do
+  echo "Deploying to $server"
+  # ssh -A isucon@54.95.112.73 "$update && $restart && $rotate_mysql && $rotate_nginx"
+  ssh -A isucon@$server "$update && $update_mysqld_config && $update_nginx_config1 && $update_nginx_config2 && $restart && $rotate_mysql && $rotate_nginx"
+done
+
