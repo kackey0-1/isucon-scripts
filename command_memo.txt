@@ -1,5 +1,7 @@
 cd webapp/ && git init && git remote add origin git@github.com:kackey0-1/isucon13.git
 git fetch
-git clean -df && git checkout v1.0.4
+git clean -df && git checkout v1.0.14
 
 mysql -uisucon -pisucon
+
+ journalctl -u isupipe-go 
