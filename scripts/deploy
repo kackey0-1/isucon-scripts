@@ -18,8 +18,8 @@ now=$(date +%Y%m%d-%H%M%S)
 update="cd /home/isucon/webapp && git remote update && git checkout $branch"
 update_mysqld_config="sudo cp /home/isucon/webapp/mysql/mysqld.cnf /etc/mysql/mysql.conf.d/mysqld.cnf"
 update_nginx_config1="sudo cp /home/isucon/webapp/nginx/nginx.conf /etc/nginx/nginx.conf"
-update_nginx_config2="sudo cp /home/isucon/webapp/nginx/isupipe.conf /etc/nginx/sites-available/isupipe.conf"
-restart="cd /home/isucon/webapp/go && /home/isucon/local/golang/bin/go build -o isupipe && sudo systemctl restart isupipe-go.service"
+update_nginx_config2="sudo cp /home/isucon/webapp/nginx/isuconquest.conf /etc/nginx/sites-available/isuconquest.conf"
+restart="cd /home/isucon/webapp/go && /home/isucon/local/golang/bin/go build -o isuconquest && sudo systemctl restart isuconquest.go.service"
 rotate_mysql="sudo touch /var/log/mysql/mysql-slow.log && sudo mv -v /var/log/mysql/mysql-slow.log /var/log/mysql/mysql-slow.log.$now && mysqladmin -uisucon -pisucon flush-logs && sudo systemctl restart mysql"
 rotate_nginx="sudo mv -v /var/log/nginx/access.log /var/log/nginx/access.log.$now && sudo systemctl reload nginx"
 
