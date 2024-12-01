@@ -1,7 +1,20 @@
 cd webapp/ && git init && git remote add origin git@github.com:kackey0-1/isucon13.git
+
 git fetch
+
 git clean -df && git checkout v1.0.14
 
-mysql -uisucon -pisucon
+mysql -uisucon -pisucon isucon
 
- journalctl -u isupipe-go 
+journalctl -u isuconquest.go.service
+
+
+sudo -i -u isucon
+export ISUXBENCH_TARGET=127.0.0.1
+./bin/benchmarker --stage=prod --request-timeout=10s --initialize-request-timeout=60s
+
+```
+s1 -> app
+s2 -> app
+s3 -> DB
+```

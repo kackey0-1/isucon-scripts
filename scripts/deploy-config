@@ -1,0 +1,38 @@
+#!/bin/sh
+# referenced from https://github.com/tatsuru/isucon13/blob/main/scripts/deploy
+# 
+# Command Usage
+# ./scripts/deploy branch_name server_name
+# ./scripts/deploy v1.0.4 kackey0-1
+# 
+set -v
+
+##### 引数関連
+# 引数でブランチ名を受け取る。デフォルトは 'master'
+branch=${1:-master}
+# 引数で対象サーバーを受け取る。複数サーバーを指定可能
+servers=${@:2}
+##### 引数終了
+
+##### Basic Settings
+BASEDIR="/home/isucon/isucon12-final"
+APP_NAME="isuconquest"
+DEPLOY_DIR="/home/isucon/webapp/go/${APP_NAME}"
+
+now=$(date +%Y%m%d-%H%M%S)
+#####
+
+
+update="cd ${BASEDIR} && git remote update && git checkout $branch"
+update_nginx_config1="sudo cp ${BASEDIR}/nginx/nginx.conf /etc/nginx/nginx.conf"
+update_nginx_config2="sudo cp ${BASEDIR}/nginx/${APP_NAME}.conf /etc/nginx/sites-available/${APP_NAME}.conf"
+rotate_nginx="sudo touch /var/log/nginx/access.log && sudo mv -v /var/log/nginx/access.log /var/log/nginx/access.log.$now && sudo systemctl reload nginx"
+
+# サーバーに順次デプロイ
+for server in $servers; do
+  echo "Deploying to $server"
+  # ssh -A isucon@54.95.112.73 "$update && $restart && $rotate_mysql && $rotate_nginx"
+  distribute_env="sudo cp ${BASEDIR}/$server/env ~/env"
+  ssh -A isucon@$server "$update && $update_nginx_config1 && $update_nginx_config2 && $rotate_nginx && $distribute_env"
+done
+
